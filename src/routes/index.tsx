@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import { AuthService } from "../service";
 import ProtectedRoute from "../routes/ProtectedRoute";
+import Login from "../pages/SignIn/SignInPage";
 
 function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,7 +43,6 @@ function AppRoutes() {
   );
 }
 
-// Estilos
 const loadingStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",

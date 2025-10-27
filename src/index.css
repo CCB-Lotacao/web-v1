@@ -10,8 +10,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #dcebff 0%, #bcdcff 100%);
   min-height: 100vh;
+  margin: 0;
+  font-family: "Inter", "Roboto", sans-serif;
 }
 
 #root {
@@ -20,4 +22,3 @@ body {
   align-items: center;
   justify-content: center;
 }
-
