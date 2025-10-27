@@ -2,7 +2,9 @@ import axios from "axios";
 
 import { IBGECity, IBGEState } from "../dtos/shared";
 
-const API_URL = "https://servicodados.ibge.gov.br/api/v1";
+const API_URL =
+  import.meta.env.VITE_IBGE_API_URL ||
+  "https://servicodados.ibge.gov.br/api/v1";
 
 const ibgeApi = axios.create({
   baseURL: API_URL,
