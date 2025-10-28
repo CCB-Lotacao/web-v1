@@ -6,6 +6,20 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
+    // --- ADICIONADO AQUI ---
+    "baseUrl": "src",
+    "paths": {
+      "@components/*": ["components/*"],
+      "@core/*": ["core/*"],
+      "@dtos/*": ["dtos/*"],
+      "@pages/*": ["pages/*"],
+      "@routes/*": ["routes/*"],
+      "@service/*": ["service/*"],
+      "@theme/*": ["theme/*"],
+      "@utils/*": ["utils/*"]
+    },
+    // --- FIM DA ADIÇÃO ---
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -22,4 +36,3 @@
   },
   "include": ["src", "src/vite-env.d.ts"]
 }
-

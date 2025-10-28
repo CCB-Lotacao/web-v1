@@ -10,9 +10,9 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const acessToken = localStorage.getItem("acessToken");
+  if (acessToken) {
+    config.headers.Authorization = `Bearer ${acessToken}`;
   }
   return config;
 });
@@ -23,7 +23,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  acessToken: string;
   user: {
     id: string;
     name: string;
@@ -37,30 +37,30 @@ export interface LoginResponse {
 
 export const AuthService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    // eslint-disable-next-line no-useless-catch
     try {
       const response = await api.post<{
         user: LoginResponse["user"];
-        token: string;
+        acessToken: string;
       }>("/users/login", credentials);
 
       return {
-        token: response.data.token,
+        acessToken: response.data.acessToken,
         user: response.data.user,
       };
     } catch (error) {
-      console.error("Erro ao fazer login: ", error);
       throw error;
     }
   },
 
   logout: () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("acessToken");
     localStorage.removeItem("user");
     window.location.href = "/login";
   },
 
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem("token");
+    return !!localStorage.getItem("acessToken");
   },
 
   getCurrentUser: () => {

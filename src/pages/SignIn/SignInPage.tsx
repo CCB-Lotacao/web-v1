@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { AuthService } from "../../service";
+import { useIntl } from "react-intl";
 
 import {
   Box,
@@ -18,10 +19,9 @@ import {
   Fade,
 } from "@mui/material";
 
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { axiosErrorMessage } from "@utils/errorMessages";
 
 interface LoginProps {
   setIsAuthenticated: (value: boolean) => void;
@@ -32,51 +32,61 @@ interface LoginValues {
   password: string;
 }
 
-const validationSchema = Yup.object({
-  email: Yup.string().email("Email inválido").required("Email é obrigatório"),
-  password: Yup.string()
-    .min(6, "Senha deve ter pelo menos 6 caracteres")
-    .required("Senha é obrigatória"),
-});
-
 const Login = ({ setIsAuthenticated }: LoginProps) => {
+  const intl = useIntl();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const validationSchema = useMemo(
+    () =>
+      Yup.object({
+        email: Yup.string()
+          .email(
+            intl.formatMessage({
+              defaultMessage: "Email inválido",
+              id: "vjEwEd",
+              description: "invalid email validation message",
+            })
+          )
+          .required(
+            intl.formatMessage({
+              defaultMessage: "Este campo é obrigatório",
+              id: "eKbI8/",
+              description: "required field",
+            })
+          ),
+        password: Yup.string().required(
+          intl.formatMessage({
+            defaultMessage: "Senha é obrigatória",
+            id: "4/Gj1G",
+            description: "password required validation message",
+          })
+        ),
+      }),
+    [intl]
+  );
 
   const formik = useFormik<LoginValues>({
     initialValues: { email: "", password: "" },
     validationSchema,
     onSubmit: async (values) => {
-      setError("");
       setLoading(true);
 
       try {
         const response = await AuthService.login(values);
-        localStorage.setItem("token", response.token);
+        localStorage.setItem("acessToken", response.acessToken);
         localStorage.setItem("user", JSON.stringify(response.user));
         setIsAuthenticated(true);
         navigate("/dashboard");
-      } catch (err) {
-        const error = err as {
-          response?: { data?: { message?: string } };
-          message?: string;
-          code?: string;
-        };
-        if (
-          error.message?.includes("Network Error") ||
-          error.code === "ECONNREFUSED"
-        ) {
-          setError(
-            "Não foi possível conectar ao servidor. Verifique se o backend está rodando."
-          );
-        } else {
-          setError(
-            error.response?.data?.message ||
-              "Erro ao fazer login. Verifique suas credenciais."
-          );
-        }
+      } catch (error) {
+        axiosErrorMessage(
+          error,
+          intl.formatMessage({
+            defaultMessage: "Erro ao fazer login. Verifique suas credenciais.",
+            id: "login.error.default",
+          })
+        );
       } finally {
         setLoading(false);
       }
@@ -101,7 +111,7 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
           {" "}
           {}
           <img
-            src="./public/ccb.png"
+            src="/ccb.png"
             alt="Logo Congregação Cristã no Brasil"
             style={{
               width: "300px",
@@ -139,22 +149,6 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
             Login
           </Typography>
 
-          {error && (
-            <Typography
-              color="error"
-              variant="body2"
-              sx={{
-                mb: 2,
-                backgroundColor: "#ffe5e5",
-                padding: 1,
-                borderRadius: 1,
-                textAlign: "center",
-              }}
-            >
-              {error}
-            </Typography>
-          )}
-
           <form noValidate onSubmit={formik.handleSubmit}>
             <Stack spacing={2}>
               <TextField
@@ -167,13 +161,7 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
                 onBlur={formik.handleBlur}
                 error={formik.touched.email && Boolean(formik.errors.email)}
                 helperText={formik.touched.email && formik.errors.email}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <MailOutlineIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
+                InputProps={{}}
                 sx={{
                   backgroundColor: "#f9fbff",
                   borderRadius: 2,
@@ -194,11 +182,6 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
                 }
                 helperText={formik.touched.password && formik.errors.password}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
