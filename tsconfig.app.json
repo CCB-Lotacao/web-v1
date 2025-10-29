@@ -16,7 +16,8 @@
       "@routes/*": ["routes/*"],
       "@service/*": ["service/*"],
       "@theme/*": ["theme/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@contexts/*": ["contexts/*"]
     },
     // --- FIM DA ADIÇÃO ---
 

@@ -4,10 +4,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { AuthService } from "../../service";
 import { useIntl } from "react-intl";
-
 import {
-  Box,
-  Button,
   TextField,
   Typography,
   Link,
@@ -18,21 +15,22 @@ import {
   Paper,
   Fade,
 } from "@mui/material";
-
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { axiosErrorMessage } from "@utils/errorMessages";
+import { AuthCard } from "../../components/AuthCard";
+import { Button } from "@components/Button";
 
-interface LoginProps {
+interface SignInProps {
   setIsAuthenticated: (value: boolean) => void;
 }
 
-interface LoginValues {
+interface SignInValues {
   email: string;
   password: string;
 }
 
-const Login = ({ setIsAuthenticated }: LoginProps) => {
+const SignIn = ({ setIsAuthenticated }: SignInProps) => {
   const intl = useIntl();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,33 +44,29 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
             intl.formatMessage({
               defaultMessage: "Email inválido",
               id: "vjEwEd",
-              description: "invalid email validation message",
             })
           )
           .required(
             intl.formatMessage({
               defaultMessage: "Este campo é obrigatório",
               id: "eKbI8/",
-              description: "required field",
             })
           ),
         password: Yup.string().required(
           intl.formatMessage({
             defaultMessage: "Senha é obrigatória",
             id: "4/Gj1G",
-            description: "password required validation message",
           })
         ),
       }),
     [intl]
   );
 
-  const formik = useFormik<LoginValues>({
+  const formik = useFormik<SignInValues>({
     initialValues: { email: "", password: "" },
     validationSchema,
     onSubmit: async (values) => {
       setLoading(true);
-
       try {
         const response = await AuthService.login(values);
         localStorage.setItem("acessToken", response.acessToken);
@@ -94,37 +88,8 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
   });
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "linear-gradient(180deg, #dcebff 0%, #bcdcff 100%)",
-        padding: 2,
-      }}
-    >
-      {}
+    <AuthCard>
       <Fade in timeout={1000}>
-        <Box sx={{ mb: 8, textAlign: "center" }}>
-          {" "}
-          {}
-          <img
-            src="/ccb.png"
-            alt="Logo Congregação Cristã no Brasil"
-            style={{
-              width: "300px",
-              height: "auto",
-              objectFit: "contain",
-              filter: "drop-shadow(0px 2px 3px rgba(0,0,0,0.1))",
-            }}
-          />
-        </Box>
-      </Fade>
-
-      {}
-      <Fade in timeout={1200}>
         <Paper
           elevation={8}
           sx={{
@@ -152,6 +117,7 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
           <form noValidate onSubmit={formik.handleSubmit}>
             <Stack spacing={2}>
               <TextField
+                required
                 fullWidth
                 id="email"
                 name="email"
@@ -161,7 +127,6 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
                 onBlur={formik.handleBlur}
                 error={formik.touched.email && Boolean(formik.errors.email)}
                 helperText={formik.touched.email && formik.errors.email}
-                InputProps={{}}
                 sx={{
                   backgroundColor: "#f9fbff",
                   borderRadius: 2,
@@ -169,6 +134,7 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
               />
 
               <TextField
+                required
                 fullWidth
                 id="password"
                 name="password"
@@ -258,8 +224,8 @@ const Login = ({ setIsAuthenticated }: LoginProps) => {
           </Typography>
         </Paper>
       </Fade>
-    </Box>
+    </AuthCard>
   );
 };
 
-export default Login;
+export default SignIn;
