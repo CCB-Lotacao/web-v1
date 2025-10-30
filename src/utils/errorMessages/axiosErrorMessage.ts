@@ -13,13 +13,9 @@ export const axiosErrorMessage = (error: unknown, defaultMessage: string) => {
       messages = [errorData.message];
     }
     if (messages.length > 0) {
-      const handled = false;
       messages.forEach((message) => {
         useCustomerUserErrorMessage(message);
       });
-      if (!handled) {
-        Toast.error(defaultMessage);
-      }
       return;
     }
   }

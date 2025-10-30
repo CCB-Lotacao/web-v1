@@ -4,7 +4,7 @@ import { AuthService } from "../service";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import SignUp from "@pages/SignUp";
 import SignIn from "@pages/SignIn/SignInPage";
-import Dashboard from "@pages/Dashboard";
+import Home from "@pages/Home/HomePage";
 
 function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,10 +33,10 @@ function AppRoutes() {
       {}
       <Route path="/register" element={<SignUp />} />
       <Route
-        path="/dashboard"
+        path="/home"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <Dashboard />
+            <Home />
           </ProtectedRoute>
         }
       />

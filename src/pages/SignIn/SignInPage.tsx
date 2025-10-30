@@ -74,7 +74,7 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
         localStorage.setItem("acessToken", response.acessToken);
         localStorage.setItem("user", JSON.stringify(response.user));
         setIsAuthenticated(true);
-        navigate("/dashboard");
+        navigate("/home");
       } catch (error) {
         axiosErrorMessage(
           error,
