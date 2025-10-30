@@ -45,7 +45,8 @@ export const AuthCard = ({
 };
 
 const BackgroundGrid = styled(Grid)`
-  height: 100dvh;
+  min-height: 100dvh;
+  height: auto;
   width: 100%;
   background: linear-gradient(180deg, #dcebff 0%, #bcdcff 100%);
   display: flex;
@@ -53,6 +54,7 @@ const BackgroundGrid = styled(Grid)`
   align-items: center;
   justify-content: center;
   padding: ${theme.spacing(2)};
+  overflow-y: auto;
 `;
 
 const Logo = styled("img")``;

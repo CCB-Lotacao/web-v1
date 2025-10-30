@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Dashboard from "../pages/Dashboard";
 import { AuthService } from "../service";
 import ProtectedRoute from "../routes/ProtectedRoute";
-import Login from "../pages/SignIn/SignInPage";
+import SignUp from "@pages/SignUp";
+import SignIn from "@pages/SignIn/SignInPage";
+import Dashboard from "@pages/Dashboard";
 
 function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,8 +28,10 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/login"
-        element={<Login setIsAuthenticated={setIsAuthenticated} />}
+        element={<SignIn setIsAuthenticated={setIsAuthenticated} />}
       />
+      {}
+      <Route path="/register" element={<SignUp />} />
       <Route
         path="/dashboard"
         element={

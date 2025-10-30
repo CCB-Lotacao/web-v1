@@ -1,21 +1,5 @@
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const acessToken = localStorage.getItem("acessToken");
-  if (acessToken) {
-    config.headers.Authorization = `Bearer ${acessToken}`;
-  }
-  return config;
-});
+import { CreateUserDTO, UserDTO } from "@dtos/user";
+import api from "./api";
 
 export interface LoginRequest {
   email: string;
@@ -24,15 +8,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   acessToken: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    phone?: string;
-    state?: string;
-    city?: string;
-  };
+  user: UserDTO;
 }
 
 export const AuthService = {
@@ -53,6 +29,16 @@ export const AuthService = {
     }
   },
 
+  register: async (data: CreateUserDTO): Promise<UserDTO> => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+      const response = await api.post<UserDTO>("/users", data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   logout: () => {
     localStorage.removeItem("acessToken");
     localStorage.removeItem("user");
@@ -63,10 +49,8 @@ export const AuthService = {
     return !!localStorage.getItem("acessToken");
   },
 
-  getCurrentUser: () => {
+  getCurrentUser: (): UserDTO | null => {
     const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
   },
 };
-
-export default api;

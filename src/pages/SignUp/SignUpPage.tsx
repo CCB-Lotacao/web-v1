@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { AuthService } from "../../service";
+import { AuthService, CommonService } from "../../service";
 import { useIntl } from "react-intl";
 import {
   TextField,
@@ -14,31 +14,57 @@ import {
   CircularProgress,
   Paper,
   Fade,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { axiosErrorMessage } from "@utils/errorMessages";
 import { AuthCard } from "../../components/AuthCard";
 import { Button } from "@components/Button";
+import { CommonDTO } from "@dtos/common";
 
-interface SignInProps {
-  setIsAuthenticated: (value: boolean) => void;
-}
-
-interface SignInValues {
+interface SignUpValues {
+  name: string;
   email: string;
   password: string;
+  confirmPassword: string;
+  commonId?: string;
 }
 
-const SignIn = ({ setIsAuthenticated }: SignInProps) => {
+const SignUpPage = () => {
   const intl = useIntl();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [comumOptions, setComumOptions] = useState<CommonDTO[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchComumOptions = async () => {
+      // eslint-disable-next-line no-useless-catch
+      try {
+        const options = await CommonService.findCommons();
+        setComumOptions(options);
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    fetchComumOptions();
+  }, []);
 
   const validationSchema = useMemo(
     () =>
       Yup.object({
+        name: Yup.string().required(
+          intl.formatMessage({
+            defaultMessage: "Nome é obrigatório",
+            id: "signUp.name.required",
+          })
+        ),
         email: Yup.string()
           .email(
             intl.formatMessage({
@@ -58,29 +84,47 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
             id: "4/Gj1G",
           })
         ),
+        confirmPassword: Yup.string()
+          .oneOf(
+            [Yup.ref("password")],
+            intl.formatMessage({
+              defaultMessage: "As senhas devem ser iguais",
+              id: "signUp.confirmPassword.match",
+            })
+          )
+          .required(
+            intl.formatMessage({
+              defaultMessage: "Confirmar senha é obrigatória",
+              id: "signUp.confirmPassword.required",
+            })
+          ),
       }),
     [intl]
   );
 
-  const formik = useFormik<SignInValues>({
-    initialValues: { email: "", password: "" },
+  const formik = useFormik<SignUpValues>({
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      commonId: "",
+    },
     validationSchema,
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const response = await AuthService.login(values);
-        localStorage.setItem("acessToken", response.acessToken);
-        localStorage.setItem("user", JSON.stringify(response.user));
-        setIsAuthenticated(true);
-        navigate("/dashboard");
+        const { ...data } = values;
+        await AuthService.register(data);
+        navigate("/login");
       } catch (error) {
         axiosErrorMessage(
           error,
           intl.formatMessage({
-            defaultMessage: "Erro ao fazer login. Verifique suas credenciais.",
-            id: "login.error.default",
+            defaultMessage: "Erro ao criar conta. Tente novamente.",
+            id: "signUp.error.default",
           })
         );
       } finally {
@@ -113,11 +157,55 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
               textAlign: "center",
             }}
           >
-            Login
+            Cadastre-se
           </Typography>
 
           <form noValidate onSubmit={formik.handleSubmit}>
             <Stack spacing={2}>
+              {}
+              <TextField
+                required
+                fullWidth
+                id="name"
+                name="name"
+                label="Nome Completo"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.name && Boolean(formik.errors.name)}
+                helperText={formik.touched.name && formik.errors.name}
+                sx={{
+                  backgroundColor: "#f9fbff",
+                  borderRadius: 2,
+                  "& .MuiFormLabel-asterisk": { color: "red" },
+                }}
+              />
+              <FormControl
+                fullWidth
+                sx={{ backgroundColor: "#f9fbff", borderRadius: 2 }}
+              >
+                <InputLabel id="common-select-label">
+                  Comum Congregação
+                </InputLabel>
+                <Select
+                  labelId="common-select-label"
+                  id="commonId"
+                  name="commonId"
+                  value={formik.values.commonId}
+                  label="Comum Congregação"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                >
+                  {}
+                  {comumOptions.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {}
               <TextField
                 required
                 fullWidth
@@ -132,13 +220,11 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
                 sx={{
                   backgroundColor: "#f9fbff",
                   borderRadius: 2,
-
-                  "& .MuiFormLabel-asterisk": {
-                    color: "red",
-                  },
+                  "& .MuiFormLabel-asterisk": { color: "red" },
                 }}
               />
 
+              {}
               <TextField
                 required
                 fullWidth
@@ -167,25 +253,52 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
                 sx={{
                   backgroundColor: "#f9fbff",
                   borderRadius: 2,
-
-                  "& .MuiFormLabel-asterisk": {
-                    color: "red",
-                  },
+                  "& .MuiFormLabel-asterisk": { color: "red" },
                 }}
               />
 
-              <Link
-                href="#"
-                underline="hover"
-                sx={{
-                  textAlign: "right",
-                  color: "#3b3b3b",
-                  fontSize: "0.9rem",
-                  mt: "-5px",
+              {}
+              <TextField
+                required
+                fullWidth
+                id="confirmPassword"
+                name="confirmPassword"
+                label="Confirmar Senha"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formik.values.confirmPassword}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.confirmPassword &&
+                  Boolean(formik.errors.confirmPassword)
+                }
+                helperText={
+                  formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword
+                }
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
-              >
-                Esqueceu sua senha?
-              </Link>
+                sx={{
+                  backgroundColor: "#f9fbff",
+                  borderRadius: 2,
+                  "& .MuiFormLabel-asterisk": { color: "red" },
+                }}
+              />
 
               <Button
                 type="submit"
@@ -209,7 +322,7 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
                 {loading ? (
                   <CircularProgress size={24} sx={{ color: "#fff" }} />
                 ) : (
-                  "ENTRAR"
+                  "CADASTRAR"
                 )}
               </Button>
             </Stack>
@@ -219,17 +332,16 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
             variant="body2"
             sx={{ mt: 3, color: "#333", textAlign: "center" }}
           >
-            Não possui uma conta?{" "}
+            Já possui uma conta?{" "}
             <Link
-              component={RouterLink}
-              to="/register"
+              href="/login"
               underline="hover"
               sx={{
                 fontWeight: "bold",
                 color: "#4d7bff",
               }}
             >
-              Cadastre-se!
+              Entre!
             </Link>
           </Typography>
         </Paper>
@@ -238,4 +350,4 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
   );
 };
 
-export default SignIn;
+export default SignUpPage;
