@@ -11,7 +11,6 @@ import {
   Stack,
   InputAdornment,
   IconButton,
-  CircularProgress,
   Paper,
   Fade,
 } from "@mui/material";
@@ -190,7 +189,7 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
               <Button
                 type="submit"
                 variant="contained"
-                disabled={loading}
+                loading={loading}
                 fullWidth
                 sx={{
                   mt: 1,
@@ -206,11 +205,7 @@ const SignIn = ({ setIsAuthenticated }: SignInProps) => {
                   },
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} sx={{ color: "#fff" }} />
-                ) : (
-                  "ENTRAR"
-                )}
+                ENTRAR
               </Button>
             </Stack>
           </form>

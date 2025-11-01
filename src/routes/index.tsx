@@ -40,6 +40,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/cadastrar/veiculo WIP"
+        element={
+          <ProtectedRoute
+            isAuthenticated={isAuthenticated}
+            children={undefined}
+          ></ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

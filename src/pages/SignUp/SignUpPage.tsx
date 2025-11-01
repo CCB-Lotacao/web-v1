@@ -11,7 +11,6 @@ import {
   Stack,
   InputAdornment,
   IconButton,
-  CircularProgress,
   Paper,
   Fade,
   MenuItem,
@@ -25,6 +24,7 @@ import { axiosErrorMessage } from "@utils/errorMessages";
 import { AuthCard } from "../../components/AuthCard";
 import { Button } from "@components/Button";
 import { CommonDTO } from "@dtos/common";
+import { Toast } from "@core/Toast";
 
 interface SignUpValues {
   name: string;
@@ -118,6 +118,7 @@ const SignUpPage = () => {
       try {
         const { ...data } = values;
         await AuthService.register(data);
+        Toast.success("Usuário cadastrado com sucesso");
         navigate("/login");
       } catch (error) {
         axiosErrorMessage(
@@ -303,7 +304,7 @@ const SignUpPage = () => {
               <Button
                 type="submit"
                 variant="contained"
-                disabled={loading}
+                loading={loading}
                 fullWidth
                 sx={{
                   mt: 1,
@@ -319,11 +320,7 @@ const SignUpPage = () => {
                   },
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} sx={{ color: "#fff" }} />
-                ) : (
-                  "CADASTRAR"
-                )}
+                CADASTRAR
               </Button>
             </Stack>
           </form>

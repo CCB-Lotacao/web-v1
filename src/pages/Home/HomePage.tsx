@@ -1,9 +1,4 @@
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Avatar,
-  IconButton,
   Box,
   Tabs,
   Tab,
@@ -13,38 +8,24 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
+import { SideBar } from "@components/SideBar";
 
 export default function Home() {
   const [tab, setTab] = useState(0);
 
   return (
-    <Box sx={{ minHeight: "100vh" }}>
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          background: "transparent",
-          boxShadow: "none",
-          color: "black",
-          zIndex: 1200,
-        }}
-      >
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            CCB Lotação
-          </Typography>
-          <IconButton>
-            <Avatar sx={{ bgcolor: "#ff0000" }}>CCB</Avatar>
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <SideBar />
 
       <Box
+        component="main"
         sx={{
-          mt: 8,
+          flexGrow: 1,
           display: "flex",
-          justifyContent: "center",
-          px: 2,
+          flexDirection: "column",
+          alignItems: "center",
+          px: 3,
+          py: 3,
         }}
       >
         <Paper
@@ -52,12 +33,13 @@ export default function Home() {
           sx={{
             p: 1.75,
             borderRadius: 2,
-            width: { xs: "100%", sm: "1000px" },
-            maxWidth: "90%",
+            width: "1000px",
+            maxWidth: "auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: "white",
+            mt: 2,
           }}
         >
           <Tabs
