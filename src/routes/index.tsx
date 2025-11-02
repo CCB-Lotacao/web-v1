@@ -5,23 +5,26 @@ import ProtectedRoute from "../routes/ProtectedRoute";
 import SignUp from "@pages/SignUp";
 import SignIn from "@pages/SignIn/SignInPage";
 import Home from "@pages/Home/HomePage";
+import UserProfilePage from "@pages/UserProfile";
+import ChurchPage from "@pages/Church/ChurchPage";
+import { Loading } from "@components/Loading";
 
 function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const authStatus = AuthService.isAuthenticated();
-    setIsAuthenticated(authStatus);
-    setLoading(false);
+    const timer = setTimeout(() => {
+      const authStatus = AuthService.isAuthenticated();
+      setIsAuthenticated(authStatus);
+      setLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
-    return (
-      <div style={loadingStyle}>
-        <div style={loadingSpinnerStyle}>Carregando...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
@@ -49,24 +52,26 @@ function AppRoutes() {
           ></ProtectedRoute>
         }
       />
+      <Route
+        path="/user-profile"
+        element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/church"
+        element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ChurchPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
-
-const loadingStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "100vh",
-  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-};
-
-const loadingSpinnerStyle: React.CSSProperties = {
-  color: "white",
-  fontSize: "1.2rem",
-  fontWeight: "600",
-};
 
 export default AppRoutes;

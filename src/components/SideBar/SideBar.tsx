@@ -8,11 +8,12 @@ import {
   ListItemText,
   Avatar,
   Box,
-  Divider,
   Tooltip,
   Typography,
   Collapse,
   IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -23,9 +24,8 @@ import LocationCityIcon from "@mui/icons-material/LocationCity";
 import AddIcon from "@mui/icons-material/Add";
 import DriveEtaIcon from "@mui/icons-material/DriveEta";
 import PersonIcon from "@mui/icons-material/Person";
-import FolderIcon from "@mui/icons-material/Folder";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { UserRole } from "axios/types/axios";
 
 const drawerWidthCollapsed = 80;
 const drawerWidthExpanded = 260;
@@ -36,7 +36,7 @@ interface SubMenuItem {
   path: string;
 }
 
-interface MenuItem {
+interface MenuItemType {
   text: string;
   icon: React.ReactNode;
   path: string;
@@ -51,6 +51,17 @@ export default function SideBar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
 
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const openUserMenu = Boolean(anchorEl);
+
+  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseUserMenu = () => {
+    setAnchorEl(null);
+  };
+
   const getInitials = (name: string): string => {
     if (!name) return "U";
     const names = name.trim().split(" ");
@@ -60,7 +71,10 @@ export default function SideBar() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const menuItems: MenuItem[] = [
+  const getUserRole =
+    user?.role === UserRole.ASSISTANT || user?.role === UserRole.SYSTEM_ADMIN;
+
+  const menuItems: MenuItemType[] = [
     {
       text: "Lotações",
       icon: <HomeIcon />,
@@ -70,31 +84,45 @@ export default function SideBar() {
     {
       text: "Igrejas",
       icon: <LocationCityIcon />,
-      path: "/igrejas",
+      path: "/church",
       hasSubmenu: false,
     },
-    {
-      text: "Cadastrar",
-      icon: <AddIcon />,
-      path: "#",
-      hasSubmenu: true,
-      submenuItems: [
-        { text: "Veículo", icon: <DriveEtaIcon />, path: "/cadastrar/veiculo" },
-        { text: "Usuário", icon: <PersonIcon />, path: "/cadastrar/usuario" },
-        { text: "Common", icon: <FolderIcon />, path: "/cadastrar/common" },
-      ],
-    },
+    ...(getUserRole
+      ? [
+          {
+            text: "Cadastrar",
+            icon: <AddIcon />,
+            path: "#",
+            hasSubmenu: true,
+            submenuItems: [
+              {
+                text: "Veículo",
+                icon: <DriveEtaIcon />,
+                path: "/cadastrar/veiculo",
+              },
+              {
+                text: "Usuário",
+                icon: <PersonIcon />,
+                path: "/cadastrar/usuario",
+              },
+              {
+                text: "Comuns",
+                icon: <LocationCityIcon />,
+                path: "/cadastrar/common",
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const handleLogout = () => {
     AuthService.logout();
   };
 
-  const handleMenuClick = (item: MenuItem) => {
+  const handleMenuClick = (item: MenuItemType) => {
     if (item.hasSubmenu) {
-      if (!isExpanded) {
-        setIsExpanded(true);
-      }
+      if (!isExpanded) setIsExpanded(true);
       setOpenMenu(openMenu === item.text ? null : item.text);
     } else {
       navigate(item.path);
@@ -102,7 +130,7 @@ export default function SideBar() {
     }
   };
 
-  const isSubmenuItemActive = (item: MenuItem): boolean => {
+  const isSubmenuItemActive = (item: MenuItemType): boolean => {
     if (!item.submenuItems) return false;
     return item.submenuItems.some(
       (subItem) => location.pathname === subItem.path
@@ -127,6 +155,7 @@ export default function SideBar() {
         },
       }}
     >
+      {}
       <Toolbar
         sx={{
           display: "flex",
@@ -157,42 +186,22 @@ export default function SideBar() {
         </Box>
         {isExpanded && (
           <IconButton
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setIsExpanded(false)}
             sx={{
               position: "absolute",
               right: 8,
               top: "50%",
               transform: "translateY(-50%)",
               color: "#64B6F7",
-              "&:hover": {
-                backgroundColor: "rgba(100, 182, 247, 0.1)",
-              },
+              "&:hover": { backgroundColor: "rgba(100, 182, 247, 0.1)" },
             }}
           >
             <ChevronLeftIcon />
           </IconButton>
         )}
-        {!isExpanded && (
-          <IconButton
-            onClick={() => setIsExpanded(!isExpanded)}
-            sx={{
-              position: "absolute",
-              right: 0,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#64B6F7",
-              "&:hover": {
-                backgroundColor: "rgba(100, 182, 247, 0.1)",
-              },
-            }}
-          >
-            <ChevronRightIcon />
-          </IconButton>
-        )}
       </Toolbar>
 
-      <Divider />
-
+      {}
       <Box sx={{ flexGrow: 1, mt: 1 }}>
         <List>
           {menuItems.map((item) => {
@@ -218,9 +227,7 @@ export default function SideBar() {
                           bgcolor: "#64B6F7",
                           fontSize: "0.875rem",
                           fontWeight: 500,
-                          "& .MuiTooltip-arrow": {
-                            color: "#64B6F7",
-                          },
+                          "& .MuiTooltip-arrow": { color: "#64B6F7" },
                         },
                       },
                     }}
@@ -230,37 +237,43 @@ export default function SideBar() {
                       sx={{
                         mx: isExpanded ? 1.5 : 0,
                         borderRadius: 2,
-                        backgroundColor: "transparent",
                         justifyContent: isExpanded ? "flex-start" : "center",
-                        minWidth: isExpanded ? "auto" : drawerWidthCollapsed,
-                        width: isExpanded ? "auto" : drawerWidthCollapsed,
+                        minWidth: drawerWidthCollapsed,
+                        width: "100%",
                         "&:hover": {
                           backgroundColor: "rgba(100, 182, 247, 0.1)",
                         },
-                        "& .MuiListItemIcon-root": {
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
                           color: itemIsActive
                             ? "#64B6F7"
                             : "rgba(0, 0, 0, 0.6)",
-                          minWidth: isExpanded ? 40 : 0,
+                          minWidth: 0,
                           display: "flex",
                           justifyContent: "center",
-                          transition: "color 0.2s ease",
-                        },
-                        "& .MuiListItemText-primary": {
-                          color: "#212121",
-                          fontWeight: itemIsActive ? 600 : 500,
-                          opacity: isExpanded ? 1 : 0,
-                          width: isExpanded ? "auto" : 0,
-                          transition: "opacity 0.3s ease, width 0.3s ease",
-                        },
-                      }}
-                    >
-                      <ListItemIcon>{item.icon}</ListItemIcon>
-                      <ListItemText primary={item.text} />
+                          width: drawerWidthCollapsed - 30,
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+
+                      {isExpanded && (
+                        <ListItemText
+                          primary={item.text}
+                          primaryTypographyProps={{
+                            fontWeight: itemIsActive ? 600 : 500,
+                            color: "#212121",
+                          }}
+                          sx={{ ml: 1 }}
+                        />
+                      )}
                     </ListItemButton>
                   </Tooltip>
                 </ListItem>
 
+                {}
                 {item.hasSubmenu && (
                   <Collapse
                     in={isSubmenuOpen && isExpanded}
@@ -272,64 +285,41 @@ export default function SideBar() {
                         const isSubItemActive =
                           location.pathname === subItem.path;
                         return (
-                          <Tooltip
+                          <ListItemButton
                             key={subItem.text}
-                            title={subItem.text}
-                            placement="right"
-                            arrow
-                            disableHoverListener={isExpanded}
-                            componentsProps={{
-                              tooltip: {
-                                sx: {
-                                  bgcolor: "#64B6F7",
-                                  fontSize: "0.875rem",
-                                  fontWeight: 500,
-                                  "& .MuiTooltip-arrow": {
-                                    color: "#64B6F7",
-                                  },
-                                },
+                            onClick={() => navigate(subItem.path)}
+                            sx={{
+                              pl: 6,
+                              pr: 2,
+                              py: 1,
+                              mx: 1.5,
+                              borderRadius: 1.5,
+                              "&:hover": {
+                                backgroundColor: "rgba(100, 182, 247, 0.08)",
                               },
                             }}
                           >
-                            <ListItemButton
-                              onClick={() => navigate(subItem.path)}
+                            <ListItemIcon
                               sx={{
-                                pl: 6,
-                                pr: 2,
-                                py: 1,
-                                mx: 1.5,
-                                borderRadius: 1.5,
-                                backgroundColor: "transparent",
-                                "&:hover": {
-                                  backgroundColor: "rgba(100, 182, 247, 0.08)",
-                                },
+                                color: isSubItemActive
+                                  ? "#64B6F7"
+                                  : "rgba(0, 0, 0, 0.6)",
+                                minWidth: 36,
+                                display: "flex",
+                                justifyContent: "center",
                               }}
                             >
-                              <ListItemIcon
-                                sx={{
-                                  color: isSubItemActive
-                                    ? "#64B6F7"
-                                    : "rgba(0, 0, 0, 0.6)",
-                                  minWidth: 36,
-                                  transition: "color 0.2s ease",
-                                }}
-                              >
-                                {subItem.icon}
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={subItem.text}
-                                primaryTypographyProps={{
-                                  fontSize: "0.875rem",
-                                  color: "#212121",
-                                  fontWeight: isSubItemActive ? 600 : 500,
-                                }}
-                                sx={{
-                                  opacity: isExpanded ? 1 : 0,
-                                  transition: "opacity 0.3s ease",
-                                }}
-                              />
-                            </ListItemButton>
-                          </Tooltip>
+                              {subItem.icon}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={subItem.text}
+                              primaryTypographyProps={{
+                                fontSize: "0.875rem",
+                                color: "#212121",
+                                fontWeight: isSubItemActive ? 600 : 500,
+                              }}
+                            />
+                          </ListItemButton>
                         );
                       })}
                     </List>
@@ -341,6 +331,7 @@ export default function SideBar() {
         </List>
       </Box>
 
+      {}
       <Box
         sx={{
           p: isExpanded ? 2 : 1,
@@ -365,61 +356,94 @@ export default function SideBar() {
               p: 1.5,
               justifyContent: isExpanded ? "flex-start" : "center",
               width: isExpanded ? "100%" : "auto",
-              "&:hover": {
-                backgroundColor: "rgba(100, 182, 247, 0.1)",
-              },
+              "&:hover": { backgroundColor: "rgba(100, 182, 247, 0.1)" },
             }}
-            onClick={handleLogout}
+            onClick={handleOpenUserMenu}
           >
             <Avatar
               sx={{
                 bgcolor: "#64B6F7",
-                width: isExpanded ? 40 : 44,
-                height: isExpanded ? 40 : 44,
+                width: 44,
+                height: 44,
                 mr: isExpanded ? 2 : 0,
                 fontWeight: 600,
-                transition:
-                  "width 0.3s ease, height 0.3s ease, margin 0.3s ease",
+                transition: "all 0.3s ease",
               }}
             >
               {user ? getInitials(user.name) : "U"}
             </Avatar>
-            <Box
-              sx={{
-                flexGrow: 1,
-                overflow: "hidden",
-                opacity: isExpanded ? 1 : 0,
-                width: isExpanded ? "auto" : 0,
-                transition: "opacity 0.3s ease, width 0.3s ease",
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: "#212121",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {user?.name || "Usuário"}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#757575",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  display: "block",
-                }}
-              >
-                {user?.email || "email@exemplo.com"}
-              </Typography>
-            </Box>
+
+            {isExpanded && (
+              <Box sx={{ overflow: "hidden" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#212121",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {user?.name || "Usuário"}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#757575",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    display: "block",
+                  }}
+                >
+                  {user?.email || "email@exemplo.com"}
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Tooltip>
+
+        {}
+        <Menu
+          anchorEl={anchorEl}
+          open={openUserMenu}
+          onClose={handleCloseUserMenu}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
+          transformOrigin={{
+            vertical: "bottom",
+            horizontal: "center",
+          }}
+          PaperProps={{
+            elevation: 3,
+            sx: {
+              mt: -1,
+              borderRadius: 2,
+              minWidth: 180,
+              bgcolor: "white",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              handleCloseUserMenu();
+              navigate("/user-profile");
+            }}
+          >
+            Meus Dados
+          </MenuItem>
+
+          <MenuItem
+            onClick={() => {
+              handleCloseUserMenu();
+              handleLogout();
+            }}
+          >
+            Sair
+          </MenuItem>
+        </Menu>
       </Box>
     </Drawer>
   );

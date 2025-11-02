@@ -13,8 +13,9 @@ import { SideBar } from "@components/SideBar";
 import { UserDTO } from "@dtos/user";
 import { AuthService } from "@service/auth";
 import { UserRole } from "axios/types/axios";
+import { ChurchGrid } from "@components/ChurchGrid";
 
-export default function Home() {
+export default function ChurchPage() {
   const [tab, setTab] = useState(0);
   const [user] = useState<UserDTO | null>(() => AuthService.getCurrentUser());
 
@@ -57,16 +58,18 @@ export default function Home() {
             textColor="primary"
             indicatorColor="primary"
           >
+            {}
             <Tab
-              label="Lotações"
+              label="Igrejas"
               sx={{ fontWeight: 600, textTransform: "none" }}
             />
+            {}
           </Tabs>
 
           {}
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <TextField
-              placeholder="Pesquisar"
+              placeholder="Pesquisar Igreja"
               variant="filled"
               size="small"
               InputProps={{
@@ -97,6 +100,7 @@ export default function Home() {
               }}
             />
 
+            {}
             {isAuthorized && (
               <Button
                 variant="contained"
@@ -104,11 +108,13 @@ export default function Home() {
                 disableElevation
                 sx={{ ml: 2 }}
               >
-                Criar Lotação
+                Cadastrar
               </Button>
             )}
           </Box>
         </Paper>
+
+        <ChurchGrid isAuthorized={isAuthorized} />
       </Box>
     </Box>
   );
