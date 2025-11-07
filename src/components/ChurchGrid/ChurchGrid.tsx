@@ -1,5 +1,3 @@
-// [Arquivo: ChurchGrid.tsx]
-
 import { useEffect, useState } from "react";
 import {
   Paper,
@@ -12,16 +10,27 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
+  Button as MuiButton,
   Menu,
   MenuItem,
   TextField,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+
 import { CommonService } from "@service/common";
+import { IBGEService } from "@service/ibge";
+import { Toast } from "@core/Toast";
 import { CommonDTO } from "@dtos/common/commonDTO";
+import { IBGEState, IBGECity } from "@dtos/shared";
+import { Button } from "@components/Button";
 
 interface ChurchGridProps {
   isAuthorized: boolean;
@@ -30,40 +39,36 @@ interface ChurchGridProps {
 export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
   const [churches, setChurches] = useState<CommonDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedChurch, setSelectedChurch] = useState<CommonDTO | null>(null);
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
+  const [states, setStates] = useState<IBGEState[]>([]);
+  const [cities, setCities] = useState<IBGECity[]>([]);
+
   useEffect(() => {
-    const fetchChurches = async () => {
-      try {
-        setIsLoading(true);
-        const data = await CommonService.findCommons();
-        setChurches(data);
-        setError(null);
-      } catch (err) {
-        console.error("Falha ao buscar igrejas:", err);
-        setError("Não foi possível carregar os dados.");
-      } finally {
-        setIsLoading(false);
-      }
+    const loadData = async () => {
+      setIsLoading(true);
+      const [commons, statesData] = await Promise.all([
+        CommonService.findCommons(),
+        IBGEService.getStates(),
+      ]);
+      setChurches(commons);
+      setStates(statesData);
+      setIsLoading(false);
     };
-    fetchChurches();
+    loadData();
   }, []);
 
-  const handleOpenViewModal = (church: CommonDTO) => {
-    setSelectedChurch(church);
-    setIsViewModalOpen(true);
-  };
-
-  const handleCloseViewModal = () => {
-    setIsViewModalOpen(false);
-    setSelectedChurch(null);
-  };
+  useEffect(() => {
+    if (selectedChurch?.state) {
+      IBGEService.getCitiesByUF(selectedChurch.state).then(setCities);
+    }
+  }, [selectedChurch?.state]);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -74,23 +79,11 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
     setSelectedChurch(church);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleOpenEditModal = () => {
     setIsEditModalOpen(true);
     handleMenuClose();
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedChurch(null);
-  };
-
-  const handleSaveChanges = () => {
-    console.log("SALVAR EDIÇÃO:", selectedChurch?.id);
-    handleCloseEditModal();
   };
 
   const handleOpenDeleteModal = () => {
@@ -99,18 +92,38 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
     handleMenuClose();
   };
 
-  const handleCloseDeleteModal = () => {
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmText !== selectedChurch?.name) return;
+
+    await CommonService.deleteCommon(selectedChurch!.id);
+    Toast.success("Congregação excluída!");
     setIsDeleteModalOpen(false);
-    setSelectedChurch(null);
-    setDeleteConfirmText("");
+
+    const commons = await CommonService.findCommons();
+    setChurches(commons);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteConfirmText === selectedChurch?.name) {
-      console.log("EXCLUIR (CONFIRMADO):", selectedChurch?.id);
-      handleCloseDeleteModal();
-    }
-  };
+  const editFormik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      name: selectedChurch?.name || "",
+      state: selectedChurch?.state || "",
+      city: selectedChurch?.city || "",
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required("Nome é obrigatório"),
+      state: Yup.string().required("Estado é obrigatório"),
+      city: Yup.string().required("Cidade é obrigatória"),
+    }),
+    onSubmit: async (values) => {
+      await CommonService.updateCommon(selectedChurch!.id, values);
+      Toast.success("Congregação atualizada!");
+
+      const commons = await CommonService.findCommons();
+      setChurches(commons);
+      setIsEditModalOpen(false);
+    },
+  });
 
   if (isLoading) {
     return (
@@ -120,194 +133,197 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
     );
   }
 
-  if (error) {
-    return (
-      <Paper sx={{ p: 2, mt: 3, color: "error.main", width: "1200px" }}>
-        {error}
-      </Paper>
-    );
-  }
-
   return (
     <>
-      <Box sx={{ width: "1200px", maxWidth: "auto", mt: 3 }}>
+      <Box sx={{ width: "1200px", mt: 3 }}>
         <Grid container spacing={2}>
           {churches.map((church) => (
             <Grid key={church.id}>
               <Paper
                 elevation={3}
-                onClick={() => handleOpenViewModal(church)}
+                onClick={() => {
+                  setSelectedChurch(church);
+                  setIsViewModalOpen(true);
+                }}
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
                   position: "relative",
                   cursor: "pointer",
                   transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-3px)",
-                    boxShadow: 6,
-                  },
+                  "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
                 }}
               >
-                {}
                 {isAuthorized && (
                   <IconButton
-                    aria-label="opções"
                     onClick={(e) => handleMenuOpen(e, church)}
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      zIndex: 1,
-                    }}
+                    sx={{ position: "absolute", top: 8, right: 8 }}
                   >
                     <MoreVertIcon />
                   </IconButton>
                 )}
 
-                <Box sx={{ pr: isAuthorized ? 4 : 0 }}>
-                  <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{ fontWeight: 600 }}
-                  >
-                    {church.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {church.city} - {church.state}
-                  </Typography>
-                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {church.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {church.city} - {church.state}
+                </Typography>
               </Paper>
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {}
-      <Dialog
-        open={isViewModalOpen}
-        onClose={handleCloseViewModal}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-            {selectedChurch?.name}
-          </Typography>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Typography gutterBottom>
-            <strong>Cidade:</strong> {selectedChurch?.city}
-          </Typography>
-          <Typography gutterBottom>
-            <strong>Estado:</strong> {selectedChurch?.state}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseViewModal}>Fechar</Button>
-        </DialogActions>
-      </Dialog>
-
-      {}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleOpenEditModal} sx={{ color: "primary.main" }}>
-          <EditIcon sx={{ mr: 1.5, color: "primary.main" }} fontSize="small" />
-          Editar
+        <MenuItem onClick={handleOpenEditModal} sx={{ color: "#1976d2" }}>
+          <EditIcon sx={{ mr: 1, color: "#1976d2" }} /> Editar
         </MenuItem>
         <MenuItem onClick={handleOpenDeleteModal} sx={{ color: "error.main" }}>
-          <DeleteIcon sx={{ mr: 1.5 }} fontSize="small" />
-          Excluir
+          <DeleteIcon sx={{ mr: 1 }} /> Excluir
         </MenuItem>
       </Menu>
 
-      {}
+      {/* VIEW MODAL */}
       <Dialog
-        open={isEditModalOpen}
-        onClose={handleCloseEditModal}
+        open={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Editar: {selectedChurch?.name}</DialogTitle>
+        <DialogTitle>{selectedChurch?.name}</DialogTitle>
         <DialogContent dividers>
-          <TextField
-            label="Nome"
-            defaultValue={selectedChurch?.name}
-            fullWidth
-            margin="normal"
-            variant="filled"
-          />
-          <TextField
-            label="Cidade"
-            defaultValue={selectedChurch?.city}
-            fullWidth
-            margin="normal"
-            variant="filled"
-          />
-          <TextField
-            label="Estado"
-            defaultValue={selectedChurch?.state}
-            fullWidth
-            margin="normal"
-            variant="filled"
-          />
+          {selectedChurch && (
+            <Stack spacing={2}>
+              <Typography>
+                <strong>Nome:</strong> {selectedChurch.name}
+              </Typography>
+              <Typography>
+                <strong>Cidade:</strong> {selectedChurch.city}
+              </Typography>
+              <Typography>
+                <strong>Estado:</strong> {selectedChurch.state}
+              </Typography>
+            </Stack>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditModal}>Cancelar</Button>
+          <MuiButton
+            onClick={() => setIsViewModalOpen(false)}
+            sx={{ color: "#1976d2", fontWeight: 600 }}
+          >
+            FECHAR
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Editar Congregação</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5}>
+            <TextField
+              label="Nome"
+              {...editFormik.getFieldProps("name")}
+              error={editFormik.touched.name && Boolean(editFormik.errors.name)}
+              helperText={editFormik.touched.name && editFormik.errors.name}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                label="Estado"
+                value={editFormik.values.state}
+                onChange={(e) => {
+                  editFormik.setFieldValue("state", e.target.value);
+                  editFormik.setFieldValue("city", "");
+                  IBGEService.getCitiesByUF(e.target.value).then(setCities);
+                }}
+              >
+                {states.map((s) => (
+                  <MenuItem key={s.sigla} value={s.sigla}>
+                    {s.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth disabled={!editFormik.values.state}>
+              <InputLabel>Cidade</InputLabel>
+              <Select label="Cidade" {...editFormik.getFieldProps("city")}>
+                {cities.map((c) => (
+                  <MenuItem key={c.id} value={c.nome}>
+                    {c.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <MuiButton
+            onClick={() => setIsEditModalOpen(false)}
+            sx={{ color: "#d32f2f", fontWeight: 600 }}
+          >
+            CANCELAR
+          </MuiButton>
+
           <Button
-            onClick={handleSaveChanges}
+            onClick={editFormik.submitForm}
             variant="contained"
-            color="primary"
+            sx={{
+              backgroundColor: "#4CAF50",
+              "&:hover": { backgroundColor: "#45a049" },
+            }}
           >
             Salvar
           </Button>
         </DialogActions>
       </Dialog>
 
-      {}
       <Dialog
         open={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
+        onClose={() => setIsDeleteModalOpen(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Confirmar Exclusão</DialogTitle>
         <DialogContent dividers>
           <Typography gutterBottom>
-            Digite o nome da igreja <strong>{selectedChurch?.name}</strong> Para
-            confirmar a exclusão permanente:
-            <br />
+            Digite o nome da igreja <strong>{selectedChurch?.name}</strong> para
+            confirmar:
           </Typography>
           <TextField
-            autoFocus
-            margin="dense"
-            label="Digite o nome para confirmar"
-            type="text"
             fullWidth
-            variant="outlined"
             value={deleteConfirmText}
             onChange={(e) => setDeleteConfirmText(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteModal}>Cancelar</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
+          <MuiButton
+            onClick={() => setIsDeleteModalOpen(false)}
+            sx={{ color: "#d32f2f", fontWeight: 600 }}
+          >
+            CANCELAR
+          </MuiButton>
+
+          <MuiButton
             variant="contained"
+            color="error"
             disabled={deleteConfirmText !== selectedChurch?.name}
+            onClick={handleConfirmDelete}
           >
             Excluir
-          </Button>
+          </MuiButton>
         </DialogActions>
       </Dialog>
     </>
