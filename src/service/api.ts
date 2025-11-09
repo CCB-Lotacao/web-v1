@@ -1,4 +1,5 @@
 import axios from "axios";
+import { AuthService } from ".";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -16,5 +17,36 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        AuthService.logout();
+        return Promise.reject(error);
+      }
+
+      const refreshResponse = await api.post(
+        "/users/refresh",
+        {},
+        { headers: { Authorization: `Bearer ${refreshToken}` } }
+      );
+
+      localStorage.setItem("acessToken", refreshResponse.data.acessToken);
+
+      error.config.headers.Authorization = `Bearer ${refreshResponse.data.acessToken}`;
+      return api(error.config);
+    } catch {
+      AuthService.logout();
+      return Promise.reject(error);
+    }
+  }
+);
 
 export default api;

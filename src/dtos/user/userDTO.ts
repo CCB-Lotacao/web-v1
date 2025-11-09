@@ -13,5 +13,4 @@ export interface UserDTO {
   password: string;
   commonId?: string;
   common?: CommonDTO;
-  createdAt: string;
 }

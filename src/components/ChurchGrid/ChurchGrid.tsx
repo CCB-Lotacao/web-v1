@@ -31,12 +31,14 @@ import { Toast } from "@core/Toast";
 import { CommonDTO } from "@dtos/common/commonDTO";
 import { IBGEState, IBGECity } from "@dtos/shared";
 import { Button } from "@components/Button";
+import { axiosErrorMessage } from "@utils/errorMessages";
 
 interface ChurchGridProps {
   isAuthorized: boolean;
+  search: string;
 }
 
-export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
+export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
   const [churches, setChurches] = useState<CommonDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedChurch, setSelectedChurch] = useState<CommonDTO | null>(null);
@@ -112,16 +114,18 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
     },
     validationSchema: Yup.object({
       name: Yup.string().required("Nome é obrigatório"),
-      state: Yup.string().required("Estado é obrigatório"),
-      city: Yup.string().required("Cidade é obrigatória"),
     }),
     onSubmit: async (values) => {
-      await CommonService.updateCommon(selectedChurch!.id, values);
-      Toast.success("Congregação atualizada!");
+      try {
+        await CommonService.updateCommon(selectedChurch!.id, values);
+        Toast.success("Congregação atualizada!");
 
-      const commons = await CommonService.findCommons();
-      setChurches(commons);
-      setIsEditModalOpen(false);
+        const commons = await CommonService.findCommons();
+        setChurches(commons);
+        setIsEditModalOpen(false);
+      } catch (error) {
+        axiosErrorMessage(error, "Erro ao atualizar congregação");
+      }
     },
   });
 
@@ -133,11 +137,15 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
     );
   }
 
+  const filteredChurches = churches.filter((church) =>
+    church.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <>
       <Box sx={{ width: "1200px", mt: 3 }}>
         <Grid container spacing={2}>
-          {churches.map((church) => (
+          {filteredChurches.map((church) => (
             <Grid key={church.id}>
               <Paper
                 elevation={3}
@@ -221,6 +229,7 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
         </DialogActions>
       </Dialog>
 
+      {}
       <Dialog
         open={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -290,6 +299,7 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
         </DialogActions>
       </Dialog>
 
+      {}
       <Dialog
         open={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -300,10 +310,12 @@ export function ChurchGrid({ isAuthorized }: ChurchGridProps) {
         <DialogContent dividers>
           <Typography gutterBottom>
             Digite o nome da igreja <strong>{selectedChurch?.name}</strong> para
-            confirmar:
+            confirmar a exclusão
           </Typography>
           <TextField
             fullWidth
+            label="Digite o nome para confirmar"
+            placeholder={selectedChurch?.name}
             value={deleteConfirmText}
             onChange={(e) => setDeleteConfirmText(e.target.value)}
           />

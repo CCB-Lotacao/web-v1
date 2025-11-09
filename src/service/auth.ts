@@ -8,6 +8,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   acessToken: string;
+  refreshToken: string;
   user: UserDTO;
 }
 
@@ -18,11 +19,17 @@ export const AuthService = {
       const response = await api.post<{
         user: LoginResponse["user"];
         acessToken: string;
-      }>("/users/login", credentials);
+        refreshToken: string;
+      }>("/auth/login", credentials);
+
+      localStorage.setItem("acessToken", response.data.acessToken);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
       return {
         acessToken: response.data.acessToken,
         user: response.data.user,
+        refreshToken: response.data.refreshToken,
       };
     } catch (error) {
       throw error;
