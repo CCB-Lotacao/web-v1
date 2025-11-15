@@ -1,4 +1,4 @@
-import { CommonDTO } from "@dtos/common";
+import { ChurchDTO } from "@dtos/church";
 
 export interface UserDTO {
   id: string;
@@ -11,6 +11,6 @@ export interface UserDTO {
   identityProvider: string;
   role: string;
   password: string;
-  commonId?: string;
-  common?: CommonDTO;
+  churchId?: string;
+  church?: ChurchDTO;
 }

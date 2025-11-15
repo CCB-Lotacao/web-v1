@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { AuthService, CommonService } from "../../service";
+import { ChurchService, UserService } from "../../service";
 import { useIntl } from "react-intl";
 import {
   TextField,
@@ -23,7 +23,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { axiosErrorMessage } from "@utils/errorMessages";
 import { AuthCard } from "../../components/AuthCard";
 import { Button } from "@components/Button";
-import { CommonDTO } from "@dtos/common";
+import { ChurchDTO } from "@dtos/church";
 import { Toast } from "@core/Toast";
 
 interface SignUpValues {
@@ -31,7 +31,7 @@ interface SignUpValues {
   email: string;
   password: string;
   confirmPassword: string;
-  commonId?: string;
+  churchId?: string;
 }
 
 const SignUpPage = () => {
@@ -39,21 +39,21 @@ const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [comumOptions, setComumOptions] = useState<CommonDTO[]>([]);
+  const [churchOptions, setChurchOptions] = useState<ChurchDTO[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchComumOptions = async () => {
+    const fetchChurchOptions = async () => {
       // eslint-disable-next-line no-useless-catch
       try {
-        const options = await CommonService.findCommons();
-        setComumOptions(options);
+        const options = await ChurchService.findChurchs();
+        setChurchOptions(options);
       } catch (error) {
         throw error;
       }
     };
 
-    fetchComumOptions();
+    fetchChurchOptions();
   }, []);
 
   const validationSchema = useMemo(
@@ -108,7 +108,7 @@ const SignUpPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      commonId: "",
+      churchId: "",
     },
     validationSchema,
     validateOnBlur: false,
@@ -117,7 +117,7 @@ const SignUpPage = () => {
       setLoading(true);
       try {
         const { ...data } = values;
-        await AuthService.register(data);
+        await UserService.register(data);
         Toast.success("Usuário cadastrado com sucesso");
         navigate("/login");
       } catch (error) {
@@ -185,20 +185,20 @@ const SignUpPage = () => {
                 fullWidth
                 sx={{ backgroundColor: "#f9fbff", borderRadius: 2 }}
               >
-                <InputLabel id="common-select-label">
+                <InputLabel id="church-select-label">
                   Comum Congregação
                 </InputLabel>
                 <Select
-                  labelId="common-select-label"
-                  id="commonId"
-                  name="commonId"
-                  value={formik.values.commonId}
+                  labelId="church-select-label"
+                  id="churchId"
+                  name="churchId"
+                  value={formik.values.churchId}
                   label="Comum Congregação"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 >
                   {}
-                  {comumOptions.map((option) => (
+                  {churchOptions.map((option) => (
                     <MenuItem key={option.id} value={option.id}>
                       {option.name}
                     </MenuItem>

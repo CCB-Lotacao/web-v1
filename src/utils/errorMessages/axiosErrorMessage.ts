@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import { Toast } from "@core/Toast";
-import { useCustomerCommonErrorMessage, useCustomerUserErrorMessage } from ".";
+import { useCustomerChurchErrorMessage, useCustomerUserErrorMessage } from ".";
 
 export const axiosErrorMessage = (error: unknown, defaultMessage: string) => {
   if (isAxiosError(error) && error.response?.data) {
@@ -15,7 +15,7 @@ export const axiosErrorMessage = (error: unknown, defaultMessage: string) => {
     if (messages.length > 0) {
       messages.forEach((message) => {
         useCustomerUserErrorMessage(message);
-        useCustomerCommonErrorMessage(message);
+        useCustomerChurchErrorMessage(message);
       });
       return;
     }

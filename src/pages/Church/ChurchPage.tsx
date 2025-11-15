@@ -20,22 +20,22 @@ import SearchIcon from "@mui/icons-material/Search";
 import { useState, useEffect } from "react";
 import { SideBar } from "@components/SideBar";
 import { UserDTO } from "@dtos/user";
-import { AuthService } from "@service/auth";
 import { UserRole } from "axios/types/axios";
 import { ChurchGrid } from "@components/ChurchGrid";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { IBGEService } from "@service/ibge";
-import { CommonService } from "@service/common";
+import { ChurchService } from "@service/church";
 import { Toast } from "@core/Toast";
 import { Button as CustomButton } from "@components/Button";
 import { IBGEState, IBGECity } from "@dtos/shared";
 import { axiosErrorMessage } from "@utils/errorMessages";
+import { UserService } from "@service/user";
 
 export default function ChurchPage() {
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState("");
-  const [user] = useState<UserDTO | null>(() => AuthService.getCurrentUser());
+  const [user] = useState<UserDTO | null>(() => UserService.getCurrentUser());
 
   const isAuthorized =
     user?.role === UserRole.ASSISTANT || user?.role === UserRole.SYSTEM_ADMIN;
@@ -59,7 +59,7 @@ export default function ChurchPage() {
     }),
     onSubmit: async (values) => {
       try {
-        await CommonService.createCommon(values);
+        await ChurchService.createChurch(values);
         Toast.success("Congregação cadastrada com sucesso!");
         setIsCreateModalOpen(false);
       } catch (error) {
@@ -170,12 +170,18 @@ export default function ChurchPage() {
         <DialogContent dividers>
           <Stack spacing={2.5}>
             <TextField
+              required
               label="Nome"
               {...createFormik.getFieldProps("name")}
               error={
                 createFormik.touched.name && Boolean(createFormik.errors.name)
               }
               helperText={createFormik.touched.name && createFormik.errors.name}
+              sx={{
+                backgroundColor: "#f9fbff",
+                borderRadius: 2,
+                "& .MuiFormLabel-asterisk": { color: "red" },
+              }}
             />
 
             <FormControl fullWidth>

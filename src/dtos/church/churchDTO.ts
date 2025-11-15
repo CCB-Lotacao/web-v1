@@ -1,4 +1,4 @@
-export interface CommonDTO {
+export interface ChurchDTO {
   id: string;
   name: string;
   state: string;

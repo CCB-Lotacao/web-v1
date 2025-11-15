@@ -4,5 +4,5 @@ export interface UpdateUserDTO {
   phone?: string;
   state?: string;
   city?: string;
-  commonId?: string;
+  churchId?: string;
 }

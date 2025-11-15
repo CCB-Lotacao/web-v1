@@ -5,5 +5,5 @@ export interface CreateUserDTO {
   state?: string;
   city?: string;
   password?: string;
-  commonId?: string;
+  churchId?: string;
 }

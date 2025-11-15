@@ -18,18 +18,18 @@ import { axiosErrorMessage } from "@utils/errorMessages";
 import { Button } from "@components/Button";
 import { SideBar } from "@components/SideBar";
 import { UserDTO } from "@dtos/user";
-import { AuthService } from "@service/auth";
-import { CommonService } from "@service/common";
-import { CommonDTO } from "@dtos/common";
+import { ChurchService } from "@service/church";
+import { ChurchDTO } from "@dtos/church";
 import { Toast } from "@core/Toast";
 import { IBGEService } from "@service/ibge";
 import { IBGEState, IBGECity } from "@dtos/shared";
+import { UserService } from "@service/user";
 
 export default function UserProfilePage() {
   const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<UserDTO | null>(null);
-  const [comumOptions, setComumOptions] = useState<CommonDTO[]>([]);
+  const [churchOptions, setChurchOptions] = useState<ChurchDTO[]>([]);
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
 
@@ -39,11 +39,11 @@ export default function UserProfilePage() {
 
     const fetchData = async () => {
       try {
-        const [commons, statesData] = await Promise.all([
-          CommonService.findCommons(),
+        const [churchs, statesData] = await Promise.all([
+          ChurchService.findChurchs(),
           IBGEService.getStates(),
         ]);
-        setComumOptions(commons);
+        setChurchOptions(churchs);
         setStates(statesData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -52,7 +52,6 @@ export default function UserProfilePage() {
 
     fetchData();
   }, []);
-  console.log(user);
   const validationSchema = useMemo(
     () =>
       Yup.object({
@@ -61,7 +60,7 @@ export default function UserProfilePage() {
           .email("Email inválido")
           .required("Email é obrigatório"),
         phone: Yup.string().nullable(),
-        commonId: Yup.string().nullable(),
+        churchId: Yup.string().nullable(),
         state: Yup.string().nullable(),
         city: Yup.string().nullable(),
       }),
@@ -74,7 +73,7 @@ export default function UserProfilePage() {
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone || "",
-      commonId: user?.common?.id || user?.commonId || "",
+      churchId: user?.church?.id || user?.churchId || "",
       state: user?.state || "",
       city: user?.city || "",
     },
@@ -83,7 +82,7 @@ export default function UserProfilePage() {
       if (!user) return;
       try {
         setLoading(true);
-        const updated = await AuthService.updateUser(user.id, values);
+        const updated = await UserService.updateUser(user.id, values);
         setUser(updated);
         Toast.success("Dados atualizados com sucesso!");
       } catch (error) {
@@ -148,6 +147,7 @@ export default function UserProfilePage() {
           <form onSubmit={formik.handleSubmit} noValidate>
             <Stack spacing={2.5}>
               <TextField
+                required
                 id="name"
                 name="name"
                 label="Nome completo"
@@ -157,9 +157,15 @@ export default function UserProfilePage() {
                 onBlur={formik.handleBlur}
                 error={formik.touched.name && Boolean(formik.errors.name)}
                 helperText={formik.touched.name && formik.errors.name}
+                sx={{
+                  backgroundColor: "#f9fbff",
+                  borderRadius: 2,
+                  "& .MuiFormLabel-asterisk": { color: "red" },
+                }}
               />
 
               <TextField
+                required
                 id="email"
                 name="email"
                 label="E-mail"
@@ -169,6 +175,11 @@ export default function UserProfilePage() {
                 onBlur={formik.handleBlur}
                 error={formik.touched.email && Boolean(formik.errors.email)}
                 helperText={formik.touched.email && formik.errors.email}
+                sx={{
+                  backgroundColor: "#f9fbff",
+                  borderRadius: 2,
+                  "& .MuiFormLabel-asterisk": { color: "red" },
+                }}
               />
 
               <TextField
@@ -184,19 +195,19 @@ export default function UserProfilePage() {
               />
 
               <FormControl fullWidth>
-                <InputLabel id="common-select-label">
+                <InputLabel id="church-select-label">
                   Comum Congregação
                 </InputLabel>
                 <Select
-                  labelId="common-select-label"
-                  id="commonId"
-                  name="commonId"
-                  value={formik.values.commonId}
+                  labelId="church-select-label"
+                  id="churchId"
+                  name="churchId"
+                  value={formik.values.churchId}
                   label="Comum Congregação"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 >
-                  {comumOptions.map((option) => (
+                  {churchOptions.map((option) => (
                     <MenuItem key={option.id} value={option.id}>
                       {option.name}
                     </MenuItem>

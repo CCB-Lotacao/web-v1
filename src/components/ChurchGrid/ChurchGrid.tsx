@@ -25,10 +25,10 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
-import { CommonService } from "@service/common";
+import { ChurchService } from "@service/church";
 import { IBGEService } from "@service/ibge";
 import { Toast } from "@core/Toast";
-import { CommonDTO } from "@dtos/common/commonDTO";
+import { ChurchDTO } from "@dtos/church/churchDTO";
 import { IBGEState, IBGECity } from "@dtos/shared";
 import { Button } from "@components/Button";
 import { axiosErrorMessage } from "@utils/errorMessages";
@@ -39,9 +39,9 @@ interface ChurchGridProps {
 }
 
 export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
-  const [churches, setChurches] = useState<CommonDTO[]>([]);
+  const [churches, setChurches] = useState<ChurchDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedChurch, setSelectedChurch] = useState<CommonDTO | null>(null);
+  const [selectedChurch, setSelectedChurch] = useState<ChurchDTO | null>(null);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -55,11 +55,11 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      const [commons, statesData] = await Promise.all([
-        CommonService.findCommons(),
+      const [churchs, statesData] = await Promise.all([
+        ChurchService.findChurchs(),
         IBGEService.getStates(),
       ]);
-      setChurches(commons);
+      setChurches(churchs);
       setStates(statesData);
       setIsLoading(false);
     };
@@ -74,7 +74,7 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
-    church: CommonDTO
+    church: ChurchDTO
   ) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -97,12 +97,12 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
   const handleConfirmDelete = async () => {
     if (deleteConfirmText !== selectedChurch?.name) return;
 
-    await CommonService.deleteCommon(selectedChurch!.id);
+    await ChurchService.deleteChurch(selectedChurch!.id);
     Toast.success("Congregação excluída!");
     setIsDeleteModalOpen(false);
 
-    const commons = await CommonService.findCommons();
-    setChurches(commons);
+    const churchs = await ChurchService.findChurchs();
+    setChurches(churchs);
   };
 
   const editFormik = useFormik({
@@ -117,11 +117,11 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
     }),
     onSubmit: async (values) => {
       try {
-        await CommonService.updateCommon(selectedChurch!.id, values);
+        await ChurchService.updateChurch(selectedChurch!.id, values);
         Toast.success("Congregação atualizada!");
 
-        const commons = await CommonService.findCommons();
-        setChurches(commons);
+        const churchs = await ChurchService.findChurchs();
+        setChurches(churchs);
         setIsEditModalOpen(false);
       } catch (error) {
         axiosErrorMessage(error, "Erro ao atualizar congregação");
@@ -314,10 +314,16 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
           </Typography>
           <TextField
             fullWidth
+            required
             label="Digite o nome para confirmar"
             placeholder={selectedChurch?.name}
             value={deleteConfirmText}
             onChange={(e) => setDeleteConfirmText(e.target.value)}
+            sx={{
+              backgroundColor: "#f9fbff",
+              borderRadius: 2,
+              "& .MuiFormLabel-asterisk": { color: "red" },
+            }}
           />
         </DialogContent>
         <DialogActions>

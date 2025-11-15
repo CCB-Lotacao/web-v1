@@ -26,6 +26,7 @@ import DriveEtaIcon from "@mui/icons-material/DriveEta";
 import PersonIcon from "@mui/icons-material/Person";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import { UserRole } from "axios/types/axios";
+import { UserService } from "@service/user";
 
 const drawerWidthCollapsed = 80;
 const drawerWidthExpanded = 260;
@@ -47,7 +48,7 @@ interface MenuItemType {
 export default function SideBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user] = useState<UserDTO | null>(() => AuthService.getCurrentUser());
+  const [user] = useState<UserDTO | null>(() => UserService.getCurrentUser());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -108,7 +109,7 @@ export default function SideBar() {
               {
                 text: "Comuns",
                 icon: <LocationCityIcon />,
-                path: "/cadastrar/common",
+                path: "/cadastrar/church",
               },
             ],
           },

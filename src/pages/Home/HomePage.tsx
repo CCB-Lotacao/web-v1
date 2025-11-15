@@ -11,12 +11,12 @@ import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
 import { SideBar } from "@components/SideBar";
 import { UserDTO } from "@dtos/user";
-import { AuthService } from "@service/auth";
 import { UserRole } from "axios/types/axios";
+import { UserService } from "@service/user";
 
 export default function Home() {
   const [tab, setTab] = useState(0);
-  const [user] = useState<UserDTO | null>(() => AuthService.getCurrentUser());
+  const [user] = useState<UserDTO | null>(() => UserService.getCurrentUser());
 
   const isAuthorized =
     user?.role === UserRole.ASSISTANT || user?.role === UserRole.SYSTEM_ADMIN;
