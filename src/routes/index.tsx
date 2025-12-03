@@ -8,6 +8,7 @@ import Home from "@pages/Home/HomePage";
 import UserProfilePage from "@pages/UserProfile";
 import ChurchPage from "@pages/Church/ChurchPage";
 import { Loading } from "@components/Loading";
+import RegisterChurchPage from "@pages/RegisterChurch";
 
 function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,16 +45,15 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/cadastrar/veiculo WIP"
+        path="/register/church"
         element={
-          <ProtectedRoute
-            isAuthenticated={isAuthenticated}
-            children={undefined}
-          ></ProtectedRoute>
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <RegisterChurchPage />
+          </ProtectedRoute>
         }
       />
       <Route
-        path="/user-profile"
+        path="/user/:userId"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <UserProfilePage />

@@ -14,61 +14,37 @@ import { useState, useMemo, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useIntl } from "react-intl";
-import { useParams } from "react-router-dom";
 import { axiosErrorMessage } from "@utils/errorMessages";
 import { Button } from "@components/Button";
 import { SideBar } from "@components/SideBar";
-import { UserDTO } from "@dtos/user";
 import { ChurchService } from "@service/church";
-import { ChurchDTO } from "@dtos/church";
 import { Toast } from "@core/Toast";
 import { IBGEService } from "@service/ibge";
 import { IBGEState, IBGECity } from "@dtos/shared";
-import { UserService } from "@service/user";
 
-export default function UserProfilePage() {
+export default function RegisterChurchPage() {
   const intl = useIntl();
-  const { userId } = useParams<{ userId: string }>();
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<UserDTO | null>(null);
-  const [churchOptions, setChurchOptions] = useState<ChurchDTO[]>([]);
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      if (userId && parsedUser.id !== userId) {
-        console.warn("User ID from URL does not match logged user");
-      }
-    }
-
     const fetchData = async () => {
       try {
-        const [churchs, statesData] = await Promise.all([
-          ChurchService.findChurchs(),
-          IBGEService.getStates(),
-        ]);
-        setChurchOptions(churchs);
+        const statesData = await IBGEService.getStates();
         setStates(statesData);
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro ao carregar estados:", error);
       }
     };
 
     fetchData();
   }, []);
+
   const validationSchema = useMemo(
     () =>
       Yup.object({
         name: Yup.string().required("Nome é obrigatório"),
-        email: Yup.string()
-          .email("Email inválido")
-          .required("Email é obrigatório"),
-        phone: Yup.string().nullable(),
-        churchId: Yup.string().nullable(),
         state: Yup.string().nullable(),
         city: Yup.string().nullable(),
       }),
@@ -76,29 +52,25 @@ export default function UserProfilePage() {
   );
 
   const formik = useFormik({
-    enableReinitialize: true,
     initialValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-      churchId: user?.church?.id || user?.churchId || "",
-      state: user?.state || "",
-      city: user?.city || "",
+      name: "",
+      state: "",
+      city: "",
     },
     validationSchema,
     onSubmit: async (values) => {
-      if (!user) return;
       try {
         setLoading(true);
-        const updated = await UserService.updateUser(user.id, values);
-        setUser(updated);
-        Toast.success("Dados atualizados com sucesso!");
+        await ChurchService.createChurch(values);
+        Toast.success("Igreja cadastrada com sucesso!");
+        formik.resetForm();
+        setCities([]);
       } catch (error) {
         axiosErrorMessage(
           error,
           intl.formatMessage({
-            defaultMessage: "Erro ao atualizar dados.",
-            id: "update.error.default",
+            defaultMessage: "Erro ao cadastrar igreja.",
+            id: "register.church.error.default",
           })
         );
       } finally {
@@ -110,10 +82,10 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (formik.values.state) {
       IBGEService.getCitiesByUF(formik.values.state).then(setCities);
+    } else {
+      setCities([]);
     }
   }, [formik.values.state]);
-
-  if (!user) return null;
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
@@ -147,7 +119,7 @@ export default function UserProfilePage() {
             variant="h6"
             sx={{ fontWeight: 700, color: "text.primary" }}
           >
-            Meu Perfil
+            Cadastrar Igreja
           </Typography>
 
           <Divider />
@@ -171,57 +143,6 @@ export default function UserProfilePage() {
                   "& .MuiFormLabel-asterisk": { color: "red" },
                 }}
               />
-
-              <TextField
-                required
-                id="email"
-                name="email"
-                label="E-mail"
-                fullWidth
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.email && Boolean(formik.errors.email)}
-                helperText={formik.touched.email && formik.errors.email}
-                sx={{
-                  backgroundColor: "#f9fbff",
-                  borderRadius: 2,
-                  "& .MuiFormLabel-asterisk": { color: "red" },
-                }}
-              />
-
-              <TextField
-                id="phone"
-                name="phone"
-                label="Celular"
-                fullWidth
-                value={formik.values.phone}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.phone && Boolean(formik.errors.phone)}
-                helperText={formik.touched.phone && formik.errors.phone}
-              />
-
-              <FormControl fullWidth>
-                <InputLabel id="church-select-label">
-                  Comum Congregação
-                </InputLabel>
-                <Select
-                  labelId="church-select-label"
-                  id="churchId"
-                  name="churchId"
-                  value={formik.values.churchId}
-                  label="Comum Congregação"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                >
-                  {churchOptions.map((option) => (
-                    <MenuItem key={option.id} value={option.id}>
-                      {option.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
 
               <Stack direction="row" spacing={2}>
                 <FormControl fullWidth>
@@ -285,7 +206,7 @@ export default function UserProfilePage() {
                   },
                 }}
               >
-                Editar
+                Cadastrar
               </Button>
             </Stack>
           </form>

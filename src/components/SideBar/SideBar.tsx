@@ -99,17 +99,17 @@ export default function SideBar() {
               {
                 text: "Veículo",
                 icon: <DriveEtaIcon />,
-                path: "/cadastrar/veiculo",
+                path: "/register/veiculo",
               },
               {
                 text: "Usuário",
                 icon: <PersonIcon />,
-                path: "/cadastrar/usuario",
+                path: "/register/usuario",
               },
               {
-                text: "Comuns",
+                text: "Igrejas",
                 icon: <LocationCityIcon />,
-                path: "/cadastrar/church",
+                path: "/register/church",
               },
             ],
           },
@@ -430,7 +430,9 @@ export default function SideBar() {
           <MenuItem
             onClick={() => {
               handleCloseUserMenu();
-              navigate("/user-profile");
+              if (user?.id) {
+                navigate(`/user/${user.id}`);
+              }
             }}
           >
             Meus Dados
