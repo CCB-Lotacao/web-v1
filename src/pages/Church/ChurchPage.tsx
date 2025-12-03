@@ -15,6 +15,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Backdrop,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useState, useEffect } from "react";
@@ -41,6 +43,8 @@ export default function ChurchPage() {
     user?.role === UserRole.ASSISTANT || user?.role === UserRole.SYSTEM_ADMIN;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
 
@@ -59,11 +63,16 @@ export default function ChurchPage() {
     }),
     onSubmit: async (values) => {
       try {
+        setIsCreating(true);
         await ChurchService.createChurch(values);
         Toast.success("Congregação cadastrada com sucesso!");
+        createFormik.resetForm();
         setIsCreateModalOpen(false);
+        setRefreshTrigger((prev) => prev + 1);
       } catch (error) {
         axiosErrorMessage(error, "Erro ao cadastrar congregação");
+      } finally {
+        setIsCreating(false);
       }
     },
   });
@@ -156,16 +165,30 @@ export default function ChurchPage() {
           </Box>
         </Paper>
 
-        <ChurchGrid isAuthorized={isAuthorized} search={search} />
+        <ChurchGrid
+          isAuthorized={isAuthorized}
+          search={search}
+          refreshTrigger={refreshTrigger}
+        />
       </Box>
 
       {}
       <Dialog
         open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => !isCreating && setIsCreateModalOpen(false)}
         maxWidth="sm"
         fullWidth
       >
+        <Backdrop
+          open={isCreating}
+          sx={{
+            position: "absolute",
+            zIndex: (theme) => theme.zIndex.modal + 1,
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
+          }}
+        >
+          <CircularProgress />
+        </Backdrop>
         <DialogTitle>Cadastrar Nova Congregação</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5}>
@@ -217,19 +240,24 @@ export default function ChurchPage() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setIsCreateModalOpen(false)} color="error">
+          <Button
+            onClick={() => setIsCreateModalOpen(false)}
+            color="error"
+            disabled={isCreating}
+          >
             Cancelar
           </Button>
 
           <CustomButton
             onClick={createFormik.submitForm}
             variant="contained"
+            disabled={isCreating}
             sx={{
               backgroundColor: "#4CAF50",
               "&:hover": { backgroundColor: "#45a049" },
             }}
           >
-            Salvar
+            {isCreating ? "Salvando..." : "Salvar"}
           </CustomButton>
         </DialogActions>
       </Dialog>

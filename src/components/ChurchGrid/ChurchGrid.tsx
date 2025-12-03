@@ -4,7 +4,6 @@ import {
   CircularProgress,
   Box,
   IconButton,
-  Grid,
   Typography,
   Dialog,
   DialogTitle,
@@ -18,6 +17,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Pagination,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -36,12 +36,19 @@ import { axiosErrorMessage } from "@utils/errorMessages";
 interface ChurchGridProps {
   isAuthorized: boolean;
   search: string;
+  refreshTrigger?: number;
 }
 
-export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
+export function ChurchGrid({
+  isAuthorized,
+  search,
+  refreshTrigger,
+}: ChurchGridProps) {
   const [churches, setChurches] = useState<ChurchDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedChurch, setSelectedChurch] = useState<ChurchDTO | null>(null);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 15;
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -52,25 +59,36 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
 
+  const loadData = async () => {
+    setIsLoading(true);
+    const [churchs, statesData] = await Promise.all([
+      ChurchService.findChurchs(),
+      IBGEService.getStates(),
+    ]);
+    setChurches(churchs);
+    setStates(statesData);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      const [churchs, statesData] = await Promise.all([
-        ChurchService.findChurchs(),
-        IBGEService.getStates(),
-      ]);
-      setChurches(churchs);
-      setStates(statesData);
-      setIsLoading(false);
-    };
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (refreshTrigger !== undefined) {
+      loadData();
+    }
+  }, [refreshTrigger]);
 
   useEffect(() => {
     if (selectedChurch?.state) {
       IBGEService.getCitiesByUF(selectedChurch.state).then(setCities);
     }
   }, [selectedChurch?.state]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -141,46 +159,93 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
     church.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredChurches.length / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedChurches = filteredChurches.slice(startIndex, endIndex);
+
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    value: number
+  ) => {
+    setPage(value);
+  };
+
   return (
     <>
       <Box sx={{ width: "1200px", mt: 3 }}>
-        <Grid container spacing={2}>
-          {filteredChurches.map((church) => (
-            <Grid key={church.id}>
-              <Paper
-                elevation={3}
-                onClick={() => {
-                  setSelectedChurch(church);
-                  setIsViewModalOpen(true);
-                }}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            },
+            gap: 2,
+          }}
+        >
+          {paginatedChurches.map((church) => (
+            <Paper
+              key={church.id}
+              elevation={3}
+              onClick={() => {
+                setSelectedChurch(church);
+                setIsViewModalOpen(true);
+              }}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                position: "relative",
+                cursor: "pointer",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+                width: "100%",
+                minHeight: "120px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              {isAuthorized && (
+                <IconButton
+                  onClick={(e) => handleMenuOpen(e, church)}
+                  sx={{ position: "absolute", top: 8, right: 8 }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+              )}
+
+              <Typography
+                variant="h6"
                 sx={{
-                  p: 2.5,
-                  borderRadius: 2,
-                  position: "relative",
-                  cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  pr: isAuthorized ? 5 : 0,
                 }}
               >
-                {isAuthorized && (
-                  <IconButton
-                    onClick={(e) => handleMenuOpen(e, church)}
-                    sx={{ position: "absolute", top: 8, right: 8 }}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                )}
-
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {church.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {church.city} - {church.state}
-                </Typography>
-              </Paper>
-            </Grid>
+                {church.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {church.city} - {church.state}
+              </Typography>
+            </Paper>
           ))}
-        </Grid>
+        </Box>
+
+        {totalPages > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4, mb: 2 }}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              size="large"
+            />
+          </Box>
+        )}
       </Box>
 
       <Menu
@@ -203,13 +268,12 @@ export function ChurchGrid({ isAuthorized, search }: ChurchGridProps) {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{selectedChurch?.name}</DialogTitle>
+        <DialogTitle>
+          <strong>{selectedChurch?.name}</strong>
+        </DialogTitle>
         <DialogContent dividers>
           {selectedChurch && (
-            <Stack spacing={2}>
-              <Typography>
-                <strong>Nome:</strong> {selectedChurch.name}
-              </Typography>
+            <Stack spacing={1}>
               <Typography>
                 <strong>Cidade:</strong> {selectedChurch.city}
               </Typography>
