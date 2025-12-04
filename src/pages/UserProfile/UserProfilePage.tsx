@@ -10,7 +10,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useIntl } from "react-intl";
@@ -34,6 +34,7 @@ export default function UserProfilePage() {
   const [churchOptions, setChurchOptions] = useState<ChurchDTO[]>([]);
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -46,6 +47,10 @@ export default function UserProfilePage() {
     }
 
     const fetchData = async () => {
+      if (isLoadingRef.current) {
+        return;
+      }
+      isLoadingRef.current = true;
       try {
         const [churchs, statesData] = await Promise.all([
           ChurchService.findChurchs(),
@@ -55,11 +60,13 @@ export default function UserProfilePage() {
         setStates(statesData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
+      } finally {
+        isLoadingRef.current = false;
       }
     };
 
     fetchData();
-  }, []);
+  }, [userId]);
   const validationSchema = useMemo(
     () =>
       Yup.object({

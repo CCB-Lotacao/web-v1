@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Paper,
   CircularProgress,
@@ -58,16 +58,26 @@ export function ChurchGrid({
 
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
+  const isLoadingRef = useRef(false);
+  const previousRefreshTriggerRef = useRef<number | undefined>(undefined);
 
   const loadData = async () => {
+    if (isLoadingRef.current) {
+      return;
+    }
+    isLoadingRef.current = true;
     setIsLoading(true);
-    const [churchs, statesData] = await Promise.all([
-      ChurchService.findChurchs(),
-      IBGEService.getStates(),
-    ]);
-    setChurches(churchs);
-    setStates(statesData);
-    setIsLoading(false);
+    try {
+      const [churchs, statesData] = await Promise.all([
+        ChurchService.findChurchs(),
+        IBGEService.getStates(),
+      ]);
+      setChurches(churchs);
+      setStates(statesData);
+    } finally {
+      setIsLoading(false);
+      isLoadingRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -75,7 +85,15 @@ export function ChurchGrid({
   }, []);
 
   useEffect(() => {
-    if (refreshTrigger !== undefined) {
+    if (refreshTrigger === undefined) {
+      return;
+    }
+    if (previousRefreshTriggerRef.current === undefined) {
+      previousRefreshTriggerRef.current = refreshTrigger;
+      return;
+    }
+    if (refreshTrigger !== previousRefreshTriggerRef.current) {
+      previousRefreshTriggerRef.current = refreshTrigger;
       loadData();
     }
   }, [refreshTrigger]);

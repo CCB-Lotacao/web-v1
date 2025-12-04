@@ -19,7 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SideBar } from "@components/SideBar";
 import { UserDTO } from "@dtos/user";
 import { UserRole } from "axios/types/axios";
@@ -47,10 +47,6 @@ export default function ChurchPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [states, setStates] = useState<IBGEState[]>([]);
   const [cities, setCities] = useState<IBGECity[]>([]);
-
-  useEffect(() => {
-    IBGEService.getStates().then(setStates);
-  }, []);
 
   const createFormik = useFormik({
     initialValues: {
@@ -157,7 +153,12 @@ export default function ChurchPage() {
                 color="success"
                 disableElevation
                 sx={{ ml: 2 }}
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => {
+                  setIsCreateModalOpen(true);
+                  if (states.length === 0) {
+                    IBGEService.getStates().then(setStates);
+                  }
+                }}
               >
                 Cadastrar
               </Button>
