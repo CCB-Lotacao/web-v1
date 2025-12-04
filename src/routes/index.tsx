@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AuthService } from "../service";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import SignUp from "@pages/SignUp";
@@ -7,26 +7,12 @@ import SignIn from "@pages/SignIn/SignInPage";
 import Home from "@pages/Home/HomePage";
 import UserProfilePage from "@pages/UserProfile";
 import ChurchPage from "@pages/Church/ChurchPage";
-import { Loading } from "@components/Loading";
 import RegisterChurchPage from "@pages/RegisterChurch";
 
 function AppRoutes() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const authStatus = AuthService.isAuthenticated();
-      setIsAuthenticated(authStatus);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <Loading />;
-  }
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    AuthService.isAuthenticated()
+  );
 
   return (
     <Routes>

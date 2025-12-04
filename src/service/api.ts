@@ -21,7 +21,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status !== 401) {
+    const isAuthRoute = error.config?.url?.includes("/auth/");
+
+    if (error.response?.status !== 401 || isAuthRoute) {
       return Promise.reject(error);
     }
 
